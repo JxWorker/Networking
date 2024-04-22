@@ -6,8 +6,9 @@ using UnityEngine;
 public class PlayerController : NetworkBehaviour
 {
     [SerializeField] private GameObject ballPrefab;
-    
+
     [SerializeField] private GameObject healthBar;
+
     private NetworkVariable<int> health = new NetworkVariable<int>(100, NetworkVariableReadPermission.Everyone,
         NetworkVariableWritePermission.Owner);
 
@@ -17,7 +18,16 @@ public class PlayerController : NetworkBehaviour
         GameObject ball = Instantiate(ballPrefab, transform.position, Quaternion.identity);
         ball.GetComponent<NetworkObject>().Spawn(true);
     }
-    
+
+    [ClientRpc]
+    private void ResetClientRPC(ulong target)
+    {
+        if (OwnerClientId == target)
+        {
+            transform.position = Vector3.zero;
+        }
+    }
+
     public override void OnNetworkSpawn()
     {
         health.OnValueChanged += (previous, current) =>
@@ -50,6 +60,14 @@ public class PlayerController : NetworkBehaviour
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 SpawnBallServerRPC();
+            }
+        }
+
+        if (IsServer)
+        {
+            if (Input.GetKeyDown(KeyCode.R))
+            {
+                ResetClientRPC(1);
             }
         }
     }
